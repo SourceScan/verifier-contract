@@ -1,39 +1,19 @@
-use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
+mod contract_data;
+
+use contract_data::ContractData;
+use contract_data::GithubData;
+use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedMap};
-use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, near_bindgen, AccountId, BorshStorageKey, require, log};
-
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
-#[serde(crate = "near_sdk::serde")]
-#[borsh(crate = "near_sdk::borsh")]
-pub struct GithubData {
-    pub owner: String,
-    pub repo: String,
-    pub sha: String,
-}
-
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
-#[serde(crate = "near_sdk::serde")]
-#[borsh(crate = "near_sdk::borsh")]
-pub struct ContractData {
-    pub cid: String,
-    pub lang: String,
-    pub entry_point: String,
-    pub code_hash: String,
-    pub builder_image: String,
-    pub github: Option<GithubData>,
-}
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
-#[borsh(crate = "near_sdk::borsh")]
 pub struct SourceScan {
     owner_id: AccountId,
     contracts: UnorderedMap<AccountId, ContractData>,
 }
 
 #[derive(BorshSerialize, BorshStorageKey)]
-#[borsh(crate = "near_sdk::borsh")]
 enum StorageKey {
     SourceScanRecords,
 }
@@ -326,7 +306,7 @@ mod tests {
 
         // Verification: Check if the correct contract is retrieved
         assert_eq!(search_results.len(), 1);
-        assert_eq!(search_results[0].0, "account1.testnet");
+        assert_eq!(search_results[0].0, "account1.testnet".parse().unwrap());
         assert_eq!(search_results[0].1.cid, "cid1");
     }
 }

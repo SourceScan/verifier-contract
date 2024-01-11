@@ -11,9 +11,12 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[patch.crates-io]
+parity-secp256k1 = { git = "https://github.com/SourceScan/rust-secp256k1", branch = "master" }
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-near-sdk = "5.0.0-alpha.1"
+near-sdk = "4.1.1"
 
 [dev-dependencies]
 near-workspaces = { version = "0.9.0", default-features = false, features = ["install", "unstable"] }
