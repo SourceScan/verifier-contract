@@ -1,6 +1,6 @@
 pub mod github_data;
-mod like;
-mod comment;
+pub mod like;
+pub mod comment;
 
 use std::collections::HashSet;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};

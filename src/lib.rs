@@ -2,6 +2,7 @@ pub mod str_serializers;
 pub mod contract_data;
 
 use contract_data::ContractData;
+use contract_data::like::Like;
 use contract_data::github_data::GithubData;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::UnorderedMap;
@@ -103,6 +104,21 @@ impl SourceScan {
 
     pub fn get_contract(&self, account_id: AccountId) -> Option<ContractData> {       
         return self.contracts.get(&account_id);
+    }
+
+    #[payable]
+    pub fn add_like(&mut self, account_id: AccountId) {
+        near_sdk::log!("add_like");
+        let mut contract: ContractData = self
+            .contracts
+            .get(&account_id)
+            .unwrap_or_else(|| panic!("Contract {} not found", account_id))
+            .into();
+        let like =
+            Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
+        contract.likes.insert(like);
+        self.contracts.remove(&account_id);
+        self.contracts.insert(&account_id, &contract);
     }
 
     pub fn get_contracts(&self, from_index: usize, limit: usize) -> (Vec<(AccountId, ContractData)>, u64) {
