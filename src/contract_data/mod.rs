@@ -17,6 +17,6 @@ pub struct ContractData {
     pub code_hash: String,
     pub builder_image: String,
     pub github: Option<GithubData>,
-    pub likes: HashSet<Vote>,
+    pub votes: HashSet<Vote>,
     pub comments: Vec<u64>,
 }

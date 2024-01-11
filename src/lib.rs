@@ -52,27 +52,32 @@ impl SourceScan {
 
     pub fn set_contract(&mut self, account_id: AccountId, cid: String, code_hash: String, lang: String, entry_point: String, builder_image: String, github: Option<GithubData>) {
         require!(env::predecessor_account_id() == self.owner_id, "Only owner can call this method");
-
+    
+        let existing_contract: Option<ContractData> = self.contracts.get(&account_id);
+    
         self.contracts.insert(&account_id, &ContractData {
-            cid: cid,
-            code_hash: code_hash,
-            lang: lang,
-            entry_point: entry_point,
-            builder_image: builder_image,
-            likes: Default::default(),
-            comments: Default::default(),
+            cid,
+            code_hash,
+            lang,
+            entry_point,
+            builder_image,
+            votes: existing_contract.as_ref().map_or(Default::default(), |c| c.votes.clone()),
+            comments: existing_contract.as_ref().map_or(Default::default(), |c| c.comments.clone()),
             github: match github {
                 Some(github_data) => Some(GithubData {
-                    owner: github_data.owner.clone(),
-                    repo: github_data.repo.clone(),
-                    sha: github_data.sha.clone(),
+                    owner: github_data.owner,
+                    repo: github_data.repo,
+                    sha: github_data.sha,
                 }),
                 None => None,
             },
         });
-
-        log!("Contract {} added", env::predecessor_account_id());
+    
+        let action = if existing_contract.is_some() { "updated" } else { "added" };
+        log!("Contract {} {}", account_id, action);
     }
+    
+    
 
     pub fn search(&self, key: String, from_index: usize, limit: usize) -> (Vec<(AccountId, ContractData)>, u64) {
         let mut result: Vec<(AccountId, ContractData)> = Vec::new();
@@ -128,13 +133,13 @@ impl SourceScan {
             vote_type: vote_type,
         };
     
-        if let Some(mut existing_vote) = contract.likes.take(&new_vote) {
+        if let Some(mut existing_vote) = contract.votes.take(&new_vote) {
             existing_vote.vote_type = vote_type;
             existing_vote.timestamp = current_timestamp;
-            contract.likes.insert(existing_vote);
+            contract.votes.insert(existing_vote);
         } else {
             // If not, insert the new vote
-            contract.likes.insert(new_vote);
+            contract.votes.insert(new_vote);
         }
     
         self.contracts.insert(&account_id, &contract);

@@ -13,6 +13,6 @@ pub struct Comment {
     #[serde(with = "u64_dec_format")]
     pub timestamp: Timestamp,
     pub description: String,
-    pub likes: HashSet<Vote>,
+    pub votes: HashSet<Vote>,
     pub comments: Vec<u64>,
 }
