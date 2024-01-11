@@ -1,5 +1,5 @@
 use crate::str_serializers::*;
-use super::Like;
+use super::Vote;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, Timestamp};
@@ -13,6 +13,6 @@ pub struct Comment {
     #[serde(with = "u64_dec_format")]
     pub timestamp: Timestamp,
     pub description: String,
-    pub likes: HashSet<Like>,
+    pub likes: HashSet<Vote>,
     pub comments: Vec<u64>,
 }

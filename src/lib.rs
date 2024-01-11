@@ -2,8 +2,8 @@ pub mod str_serializers;
 pub mod contract_data;
 
 use contract_data::ContractData;
-use contract_data::like::Like;
 use contract_data::github_data::GithubData;
+use contract_data::vote::{VoteType, Vote};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::UnorderedMap;
 use near_sdk::{env, near_bindgen, AccountId, BorshStorageKey, require, log};
@@ -106,20 +106,42 @@ impl SourceScan {
         return self.contracts.get(&account_id);
     }
 
-    #[payable]
-    pub fn add_like(&mut self, account_id: AccountId) {
-        near_sdk::log!("add_like");
+    pub fn vote(&mut self, account_id: AccountId, is_upvote: bool) {
         let mut contract: ContractData = self
             .contracts
             .get(&account_id)
             .unwrap_or_else(|| panic!("Contract {} not found", account_id))
             .into();
-        let like =
-            Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
-        contract.likes.insert(like);
-        self.contracts.remove(&account_id);
+    
+        let author_id = env::predecessor_account_id();
+        let current_timestamp = env::block_timestamp();
+    
+        let vote_type = if is_upvote {
+            VoteType::Upvote
+        } else {
+            VoteType::Downvote
+        };
+    
+        let new_vote = Vote {
+            author_id: author_id.clone(),
+            timestamp: current_timestamp,
+            vote_type: vote_type,
+        };
+    
+        if let Some(mut existing_vote) = contract.likes.take(&new_vote) {
+            existing_vote.vote_type = vote_type;
+            existing_vote.timestamp = current_timestamp;
+            contract.likes.insert(existing_vote);
+        } else {
+            // If not, insert the new vote
+            contract.likes.insert(new_vote);
+        }
+    
         self.contracts.insert(&account_id, &contract);
+        log!("Vote updated for contract {}", account_id);
     }
+    
+    
 
     pub fn get_contracts(&self, from_index: usize, limit: usize) -> (Vec<(AccountId, ContractData)>, u64) {
         let filtered:Vec<(AccountId, ContractData)> = self.contracts
