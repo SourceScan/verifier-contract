@@ -1,13 +1,12 @@
+pub mod github_data;
+mod like;
+mod comment;
+
+use std::collections::HashSet;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
-#[serde(crate = "near_sdk::serde")]
-pub struct GithubData {
-    pub owner: String,
-    pub repo: String,
-    pub sha: String,
-}
+use like::Like;
+use github_data::GithubData;
 
 #[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
 #[serde(crate = "near_sdk::serde")]
@@ -18,4 +17,6 @@ pub struct ContractData {
     pub code_hash: String,
     pub builder_image: String,
     pub github: Option<GithubData>,
+    pub likes: HashSet<Like>,
+    pub comments: Vec<u64>,
 }

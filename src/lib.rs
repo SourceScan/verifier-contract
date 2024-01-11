@@ -1,9 +1,10 @@
-mod contract_data;
+pub mod str_serializers;
+pub mod contract_data;
 
 use contract_data::ContractData;
-use contract_data::GithubData;
+use contract_data::github_data::GithubData;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{UnorderedMap};
+use near_sdk::collections::UnorderedMap;
 use near_sdk::{env, near_bindgen, AccountId, BorshStorageKey, require, log};
 
 #[near_bindgen]
@@ -57,6 +58,8 @@ impl SourceScan {
             lang: lang,
             entry_point: entry_point,
             builder_image: builder_image,
+            likes: Default::default(),
+            comments: Default::default(),
             github: match github {
                 Some(github_data) => Some(GithubData {
                     owner: github_data.owner.clone(),
