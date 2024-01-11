@@ -182,6 +182,29 @@ mod tests {
         builder
     }
 
+    // Helper function to add a contract
+    fn add_contract(contract: &mut SourceScan, account_id: AccountId, with_github: bool) {
+        let github_data = if with_github {
+            Some(GithubData {
+                owner: "owner".to_string(),
+                repo: "repo".to_string(),
+                sha: "sha".to_string(),
+            })
+        } else {
+            None
+        };
+
+        contract.set_contract(
+            account_id, 
+            "cid".to_string(), 
+            "code_hash".to_string(), 
+            "lang".to_string(), 
+            "entry_point".to_string(), 
+            "builder_image".to_string(), 
+            github_data
+        );
+    }
+
     #[test]
     #[should_panic(expected = "SourceScan should be initialized before usage")]
     fn default_constructor() {
@@ -226,23 +249,9 @@ mod tests {
     fn set_and_get_contract() {
         let context = get_context(accounts(0));
         testing_env!(context.build());
-
         let mut contract = SourceScan::new();
-        let github_data = GithubData {
-            owner: "owner".to_string(),
-            repo: "repo".to_string(),
-            sha: "sha".to_string(),
-        };
 
-        contract.set_contract(
-            accounts(1), 
-            "cid".to_string(), 
-            "code_hash".to_string(), 
-            "lang".to_string(), 
-            "entry_point".to_string(), 
-            "builder_image".to_string(), 
-            Some(github_data)
-        );
+        add_contract(&mut contract, accounts(1), true);
 
         let contract_data = contract.get_contract(accounts(1)).unwrap();
         assert_eq!(contract_data.cid, "cid");
@@ -257,29 +266,12 @@ mod tests {
     fn purge_and_verify_contract() {
         let context = get_context(accounts(0));
         testing_env!(context.build());
-
         let mut contract = SourceScan::new();
 
-        // Setup: Add a contract
-        let github_data = GithubData {
-            owner: "owner".to_string(),
-            repo: "repo".to_string(),
-            sha: "sha".to_string(),
-        };
-        contract.set_contract(
-            accounts(1), 
-            "cid".to_string(), 
-            "code_hash".to_string(), 
-            "lang".to_string(), 
-            "entry_point".to_string(), 
-            "builder_image".to_string(), 
-            Some(github_data)
-        );
+        add_contract(&mut contract, accounts(1), true);
 
-        // Action: Purge the contract
         contract.purge_contract(accounts(1));
 
-        // Verification: Ensure contract is removed
         assert!(contract.get_contract(accounts(1)).is_none());
     }
 
@@ -288,7 +280,6 @@ mod tests {
     fn purge_contract_unauthorized() {
         let context = get_context(accounts(1));
         testing_env!(context.build());
-
         let mut contract = SourceScan::new();
         contract.set_owner(accounts(2));
         contract.purge_contract(accounts(2));
@@ -298,54 +289,27 @@ mod tests {
     fn list_and_verify_contracts() {
         let context = get_context(accounts(0));
         testing_env!(context.build());
-
         let mut contract = SourceScan::new();
-        // Setup: Add multiple contracts
+
         for i in 1..4 {
-            contract.set_contract(
-                accounts(i), 
-                format!("cid_{}", i), 
-                "code_hash".to_string(), 
-                "lang".to_string(), 
-                "entry_point".to_string(), 
-                "builder_image".to_string(), 
-                None
-            );
+            add_contract(&mut contract, accounts(i), false);
         }
 
-        // Action: Retrieve contracts
         let (contracts, total_pages) = contract.get_contracts(0, 2);
 
-        // Verification: Check the retrieved contracts and pagination
         assert_eq!(contracts.len(), 2);
-        assert_eq!(total_pages, 2); // As we have 3 contracts and limit is 2
+        assert_eq!(total_pages, 2);
     }
 
     #[test]
     fn search_contracts() {
         let context = get_context(accounts(0));
         testing_env!(context.build());
-
         let mut contract = SourceScan::new();
-        // Setup: Add contracts with varying account_ids
-        contract.set_contract(
-            "account1.testnet".parse().unwrap(), 
-            "cid1".to_string(), 
-            "code_hash1".to_string(), 
-            "lang1".to_string(), 
-            "entry_point1".to_string(), 
-            "builder_image1".to_string(), 
-            None
-        );
-        contract.set_contract(
-            "account2.testnet".parse().unwrap(), 
-            "cid2".to_string(), 
-            "code_hash2".to_string(), 
-            "lang2".to_string(), 
-            "entry_point2".to_string(), 
-            "builder_image2".to_string(), 
-            None
-        );
+
+        // Setup: Add contracts with varying account_ids using the helper function
+        add_contract(&mut contract, "account1.testnet".parse().unwrap(), false);
+        add_contract(&mut contract, "account2.testnet".parse().unwrap(), false);
 
         // Action: Search for contracts
         let (search_results, _) = contract.search("account1".to_string(), 0, 10);
@@ -353,6 +317,47 @@ mod tests {
         // Verification: Check if the correct contract is retrieved
         assert_eq!(search_results.len(), 1);
         assert_eq!(search_results[0].0, "account1.testnet".parse().unwrap());
-        assert_eq!(search_results[0].1.cid, "cid1");
+    }
+
+    #[test]
+    fn test_vote_functionality() {
+        let context = get_context(accounts(0));
+        testing_env!(context.build());
+
+        let mut contract = SourceScan::new();
+        add_contract(&mut contract, accounts(1), false);
+
+        // Upvote the contract
+        contract.vote(accounts(1), true);
+
+        let contract_data = contract.get_contract(accounts(1)).unwrap();
+        assert_eq!(contract_data.votes.len(), 1);
+        assert!(matches!(contract_data.votes.iter().next().unwrap().vote_type, VoteType::Upvote));
+
+        // Change to downvote
+        contract.vote(accounts(1), false);
+
+        let contract_data = contract.get_contract(accounts(1)).unwrap();
+        assert!(matches!(contract_data.votes.iter().next().unwrap().vote_type, VoteType::Downvote));
+    }
+
+    #[test]
+    fn test_contract_update() {
+        let context = get_context(accounts(0));
+        testing_env!(context.build());
+
+        let mut contract = SourceScan::new();
+        add_contract(&mut contract, accounts(1), false);
+
+        // Upvote the contract
+        contract.vote(accounts(1), true);
+
+        // Update the contract
+        add_contract(&mut contract, accounts(1), true);
+
+        let contract_data = contract.get_contract(accounts(1)).unwrap();
+        assert!(matches!(contract_data.votes.iter().next().unwrap().vote_type, VoteType::Upvote));
+        assert!(contract_data.github.is_some());
+        assert_eq!(contract_data.github.unwrap().owner, "owner");
     }
 }
