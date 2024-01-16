@@ -437,11 +437,48 @@ mod tests {
         add_contract(&mut contract, accounts(1), false);
 
         contract.add_comment(accounts(1), "First comment".to_string());
-        contract.add_comment(accounts(1), "Second comment".to_string());
+        contract.add_comment( accounts(1), "Second comment".to_string());
 
         let comments = contract.get_comments(accounts(1));
         assert_eq!(comments.len(), 2);
         assert_eq!(comments[0].content, "First comment");
         assert_eq!(comments[1].content, "Second comment");
+    }
+
+    #[test]
+    fn test_vote_comment_upvote() {
+        let context = get_context(accounts(0));
+        testing_env!(context.build());
+
+        let mut contract = SourceScan::new();
+        add_contract(&mut contract, accounts(1), false);
+
+        contract.add_comment(accounts(1), "Another Test Comment".to_string());
+
+        let comment_id = 0; // Assuming this is the first comment added, its id will be 0
+
+        contract.vote_comment(comment_id, true); // Upvote the comment
+
+        let comment = contract.comments.get(comment_id).unwrap();
+        assert_eq!(comment.votes.len(), 1);
+        assert!(matches!(comment.votes.iter().next().unwrap().vote_type, VoteType::Upvote));
+    }
+
+    #[test]
+    fn test_vote_comment_downvote() {
+        let context = get_context(accounts(0));
+        testing_env!(context.build());
+
+        let mut contract = SourceScan::new();
+        add_contract(&mut contract, accounts(1), false);
+
+        contract.add_comment(accounts(1), "Another Test Comment".to_string());
+
+        let comment_id = 0; // Assuming this is the first comment added, its id will be 0
+
+        contract.vote_comment(comment_id, false);
+        let comment = contract.comments.get(comment_id).unwrap();
+        assert_eq!(comment.votes.len(), 1);
+        assert!(matches!(comment.votes.iter().next().unwrap().vote_type, VoteType::Downvote));
     }
 }
