@@ -1,6 +1,8 @@
 pub mod str_serializers;
 pub mod verified_contract;
 
+use std::collections::HashSet;
+
 use verified_contract::VerifiedContract;
 use verified_contract::comment::Comment;
 use verified_contract::github::Github;
@@ -125,40 +127,14 @@ impl SourceScan {
         return (filtered, pages);
     }
 
-    fn get_pages (&self, len: u64, limit: u64) -> u64 {
-        return (len + limit - 1) / limit;
-    }
-
-    pub fn add_vote(&mut self, account_id: AccountId, is_upvote: bool) {
+    pub fn vote_contract(&mut self, account_id: AccountId, is_upvote: bool) {
         let mut contract: VerifiedContract = self
             .contracts
             .get(&account_id)
             .unwrap_or_else(|| panic!("Contract {} not found", account_id))
             .into();
     
-        let author_id = env::predecessor_account_id();
-        let current_timestamp = env::block_timestamp();
-    
-        let vote_type = if is_upvote {
-            VoteType::Upvote
-        } else {
-            VoteType::Downvote
-        };
-    
-        let new_vote = Vote {
-            author_id: author_id.clone(),
-            timestamp: current_timestamp,
-            vote_type: vote_type,
-        };
-    
-        if let Some(mut existing_vote) = contract.votes.take(&new_vote) {
-            existing_vote.vote_type = vote_type;
-            existing_vote.timestamp = current_timestamp;
-            contract.votes.insert(existing_vote);
-        } else {
-            // If not, insert the new vote
-            contract.votes.insert(new_vote);
-        }
+        self.update_or_insert_vote(&mut contract.votes, is_upvote);
     
         self.contracts.insert(&account_id, &contract);
         log!("Vote updated for contract {}", account_id);
@@ -202,6 +178,42 @@ impl SourceScan {
         }
     
         return comments;
+    }
+
+    pub fn vote_comment(&mut self, comment_id: u64, is_upvote: bool) {    
+        require!(self.comments.get(comment_id).is_some(), "Comment not found");
+    
+        let mut comment: Comment = self
+            .comments
+            .get(comment_id)
+            .unwrap_or_else(|| panic!("Comment {} not found", comment_id))
+            .into();
+    
+        self.update_or_insert_vote(&mut comment.votes, is_upvote);
+    
+        self.comments.replace(comment_id, &comment);
+        log!("Vote updated for comment {}", comment_id);
+    }
+
+    fn get_pages (&self, len: u64, limit: u64) -> u64 {
+        return (len + limit - 1) / limit;
+    }
+
+    fn update_or_insert_vote(&self, votes: &mut HashSet<Vote>, is_upvote: bool) {
+        let author_id = env::predecessor_account_id();
+        let current_timestamp = env::block_timestamp();
+        let vote_type = if is_upvote { VoteType::Upvote } else { VoteType::Downvote };
+    
+        let new_vote = Vote {
+            author_id: author_id.clone(),
+            timestamp: current_timestamp,
+            vote_type: vote_type,
+        };
+    
+        // Remove the old vote if it exists
+        votes.take(&new_vote);
+        // Insert the new vote
+        votes.insert(new_vote);
     }
 }
 
@@ -368,14 +380,14 @@ mod tests {
         add_contract(&mut contract, accounts(1), false);
 
         // Upvote the contract
-        contract.add_vote(accounts(1), true);
+        contract.vote_contract(accounts(1), true);
 
         let contract_data = contract.get_contract(accounts(1)).unwrap();
         assert_eq!(contract_data.votes.len(), 1);
         assert!(matches!(contract_data.votes.iter().next().unwrap().vote_type, VoteType::Upvote));
 
         // Change to downvote
-        contract.add_vote(accounts(1), false);
+        contract.vote_contract(accounts(1), false);
 
         let contract_data = contract.get_contract(accounts(1)).unwrap();
         assert!(matches!(contract_data.votes.iter().next().unwrap().vote_type, VoteType::Downvote));
@@ -390,7 +402,7 @@ mod tests {
         add_contract(&mut contract, accounts(1), false);
 
         // Upvote the contract
-        contract.add_vote(accounts(1), true);
+        contract.vote_contract(accounts(1), true);
 
         // Update the contract
         add_contract(&mut contract, accounts(1), true);
