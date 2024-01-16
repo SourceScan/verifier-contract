@@ -80,8 +80,18 @@ impl SourceScan {
         let action = if existing_contract.is_some() { "updated" } else { "added" };
         log!("Contract {} {}", account_id, action);
     }
-    
-    
+
+    pub fn purge_contract(&mut self, account_id: AccountId) {
+        require!(env::predecessor_account_id() == self.owner_id, "Only owner can call this method");
+
+        self.contracts.remove(&account_id);
+
+        log!("Contract {} removed", account_id);
+    }
+
+    pub fn get_contract(&self, account_id: AccountId) -> Option<VerifiedContract> {       
+        return self.contracts.get(&account_id);
+    }
 
     pub fn search(&self, key: String, from_index: usize, limit: usize) -> (Vec<(AccountId, VerifiedContract)>, u64) {
         let mut result: Vec<(AccountId, VerifiedContract)> = Vec::new();
@@ -103,16 +113,20 @@ impl SourceScan {
         return (filtered, pages);
     }
 
-    pub fn purge_contract(&mut self, account_id: AccountId) {
-        require!(env::predecessor_account_id() == self.owner_id, "Only owner can call this method");
+    pub fn get_contracts(&self, from_index: usize, limit: usize) -> (Vec<(AccountId, VerifiedContract)>, u64) {
+        let filtered:Vec<(AccountId, VerifiedContract)> = self.contracts
+        .iter()
+        .skip(from_index)
+        .take(limit)
+        .collect();
 
-        self.contracts.remove(&account_id);
+        let pages: u64 = self.get_pages(self.contracts.len(), limit as u64);
 
-        log!("Contract {} removed", account_id);
+        return (filtered, pages);
     }
 
-    pub fn get_contract(&self, account_id: AccountId) -> Option<VerifiedContract> {       
-        return self.contracts.get(&account_id);
+    fn get_pages (&self, len: u64, limit: u64) -> u64 {
+        return (len + limit - 1) / limit;
     }
 
     pub fn vote(&mut self, account_id: AccountId, is_upvote: bool) {
@@ -149,23 +163,29 @@ impl SourceScan {
         self.contracts.insert(&account_id, &contract);
         log!("Vote updated for contract {}", account_id);
     }
+
+    pub fn add_comment(&mut self, account_id: AccountId, content: String) {
+        let mut contract: VerifiedContract = self
+            .contracts
+            .get(&account_id)
+            .unwrap_or_else(|| panic!("Contract {} not found", account_id))
+            .into();
     
+        let author_id = env::predecessor_account_id();
+        let current_timestamp = env::block_timestamp();
     
-
-    pub fn get_contracts(&self, from_index: usize, limit: usize) -> (Vec<(AccountId, VerifiedContract)>, u64) {
-        let filtered:Vec<(AccountId, VerifiedContract)> = self.contracts
-        .iter()
-        .skip(from_index)
-        .take(limit)
-        .collect();
-
-        let pages: u64 = self.get_pages(self.contracts.len(), limit as u64);
-
-        return (filtered, pages);
-    }
-
-    fn get_pages (&self, len: u64, limit: u64) -> u64 {
-        return (len + limit - 1) / limit;
+        let new_comment = Comment {
+            id: self.comments.len() as u64,
+            author_id: author_id.clone(),
+            timestamp: current_timestamp,
+            content: content,
+            votes: Default::default(),
+        };
+    
+        contract.comments.push(new_comment.id);
+        self.comments.push(&new_comment);
+        self.contracts.insert(&account_id, &contract);
+        log!("Comment added for contract {}", account_id);
     }
 }
 

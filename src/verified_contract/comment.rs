@@ -12,6 +12,6 @@ pub struct Comment {
     pub author_id: AccountId,
     #[serde(with = "u64_dec_format")]
     pub timestamp: Timestamp,
-    pub description: String,
+    pub content: String,
     pub votes: HashSet<Vote>,
 }
