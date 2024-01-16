@@ -1,23 +1,26 @@
 pub mod str_serializers;
-pub mod contract_data;
+pub mod verified_contract;
 
-use contract_data::ContractData;
-use contract_data::github_data::GithubData;
-use contract_data::vote::{VoteType, Vote};
+use verified_contract::VerifiedContract;
+use verified_contract::comment::Comment;
+use verified_contract::github::Github;
+use verified_contract::vote::{VoteType, Vote};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::UnorderedMap;
+use near_sdk::collections::{UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, BorshStorageKey, require, log};
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct SourceScan {
     owner_id: AccountId,
-    contracts: UnorderedMap<AccountId, ContractData>,
+    contracts: UnorderedMap<AccountId, VerifiedContract>,
+    comments: Vector<Comment>
 }
 
 #[derive(BorshSerialize, BorshStorageKey)]
 enum StorageKey {
-    SourceScanRecords,
+    VerifiedContracts,
+    Comments,
 }
 
 impl Default for SourceScan {
@@ -34,7 +37,8 @@ impl SourceScan {
         
         Self {
             owner_id: env::predecessor_account_id(),
-            contracts: UnorderedMap::new(StorageKey::SourceScanRecords),
+            contracts: UnorderedMap::new(StorageKey::VerifiedContracts),
+            comments: Vector::new(StorageKey::Comments),
         }
     }
 
@@ -50,12 +54,12 @@ impl SourceScan {
         return self.owner_id.clone();
     }
 
-    pub fn set_contract(&mut self, account_id: AccountId, cid: String, code_hash: String, lang: String, entry_point: String, builder_image: String, github: Option<GithubData>) {
+    pub fn set_contract(&mut self, account_id: AccountId, cid: String, code_hash: String, lang: String, entry_point: String, builder_image: String, github: Option<Github>) {
         require!(env::predecessor_account_id() == self.owner_id, "Only owner can call this method");
     
-        let existing_contract: Option<ContractData> = self.contracts.get(&account_id);
+        let existing_contract: Option<VerifiedContract> = self.contracts.get(&account_id);
     
-        self.contracts.insert(&account_id, &ContractData {
+        self.contracts.insert(&account_id, &VerifiedContract {
             cid,
             code_hash,
             lang,
@@ -64,7 +68,7 @@ impl SourceScan {
             votes: existing_contract.as_ref().map_or(Default::default(), |c| c.votes.clone()),
             comments: existing_contract.as_ref().map_or(Default::default(), |c| c.comments.clone()),
             github: match github {
-                Some(github_data) => Some(GithubData {
+                Some(github_data) => Some(Github {
                     owner: github_data.owner,
                     repo: github_data.repo,
                     sha: github_data.sha,
@@ -79,8 +83,8 @@ impl SourceScan {
     
     
 
-    pub fn search(&self, key: String, from_index: usize, limit: usize) -> (Vec<(AccountId, ContractData)>, u64) {
-        let mut result: Vec<(AccountId, ContractData)> = Vec::new();
+    pub fn search(&self, key: String, from_index: usize, limit: usize) -> (Vec<(AccountId, VerifiedContract)>, u64) {
+        let mut result: Vec<(AccountId, VerifiedContract)> = Vec::new();
 
         for (k, v) in self.contracts.iter()
         {            
@@ -90,7 +94,7 @@ impl SourceScan {
         }
         
         let pages: u64 = self.get_pages(result.len() as u64, limit as u64);
-        let filtered: Vec<(AccountId, ContractData)> = result
+        let filtered: Vec<(AccountId, VerifiedContract)> = result
         .into_iter()
         .skip(from_index)
         .take(limit)
@@ -107,12 +111,12 @@ impl SourceScan {
         log!("Contract {} removed", account_id);
     }
 
-    pub fn get_contract(&self, account_id: AccountId) -> Option<ContractData> {       
+    pub fn get_contract(&self, account_id: AccountId) -> Option<VerifiedContract> {       
         return self.contracts.get(&account_id);
     }
 
     pub fn vote(&mut self, account_id: AccountId, is_upvote: bool) {
-        let mut contract: ContractData = self
+        let mut contract: VerifiedContract = self
             .contracts
             .get(&account_id)
             .unwrap_or_else(|| panic!("Contract {} not found", account_id))
@@ -148,8 +152,8 @@ impl SourceScan {
     
     
 
-    pub fn get_contracts(&self, from_index: usize, limit: usize) -> (Vec<(AccountId, ContractData)>, u64) {
-        let filtered:Vec<(AccountId, ContractData)> = self.contracts
+    pub fn get_contracts(&self, from_index: usize, limit: usize) -> (Vec<(AccountId, VerifiedContract)>, u64) {
+        let filtered:Vec<(AccountId, VerifiedContract)> = self.contracts
         .iter()
         .skip(from_index)
         .take(limit)
@@ -185,7 +189,7 @@ mod tests {
     // Helper function to add a contract
     fn add_contract(contract: &mut SourceScan, account_id: AccountId, with_github: bool) {
         let github_data = if with_github {
-            Some(GithubData {
+            Some(Github {
                 owner: "owner".to_string(),
                 repo: "repo".to_string(),
                 sha: "sha".to_string(),

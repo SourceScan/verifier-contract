@@ -14,5 +14,4 @@ pub struct Comment {
     pub timestamp: Timestamp,
     pub description: String,
     pub votes: HashSet<Vote>,
-    pub comments: Vec<u64>,
 }
