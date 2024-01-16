@@ -129,7 +129,7 @@ impl SourceScan {
         return (len + limit - 1) / limit;
     }
 
-    pub fn vote(&mut self, account_id: AccountId, is_upvote: bool) {
+    pub fn add_vote(&mut self, account_id: AccountId, is_upvote: bool) {
         let mut contract: VerifiedContract = self
             .contracts
             .get(&account_id)
@@ -186,6 +186,22 @@ impl SourceScan {
         self.comments.push(&new_comment);
         self.contracts.insert(&account_id, &contract);
         log!("Comment added for contract {}", account_id);
+    }
+
+    pub fn get_comments(&self, account_id: AccountId) -> Vec<Comment> {
+        let contract: VerifiedContract = self
+            .contracts
+            .get(&account_id)
+            .unwrap_or_else(|| panic!("Contract {} not found", account_id))
+            .into();
+    
+        let mut comments: Vec<Comment> = Vec::new();
+    
+        for comment_id in contract.comments {
+            comments.push(self.comments.get(comment_id).unwrap());
+        }
+    
+        return comments;
     }
 }
 
@@ -352,14 +368,14 @@ mod tests {
         add_contract(&mut contract, accounts(1), false);
 
         // Upvote the contract
-        contract.vote(accounts(1), true);
+        contract.add_vote(accounts(1), true);
 
         let contract_data = contract.get_contract(accounts(1)).unwrap();
         assert_eq!(contract_data.votes.len(), 1);
         assert!(matches!(contract_data.votes.iter().next().unwrap().vote_type, VoteType::Upvote));
 
         // Change to downvote
-        contract.vote(accounts(1), false);
+        contract.add_vote(accounts(1), false);
 
         let contract_data = contract.get_contract(accounts(1)).unwrap();
         assert!(matches!(contract_data.votes.iter().next().unwrap().vote_type, VoteType::Downvote));
@@ -374,7 +390,7 @@ mod tests {
         add_contract(&mut contract, accounts(1), false);
 
         // Upvote the contract
-        contract.vote(accounts(1), true);
+        contract.add_vote(accounts(1), true);
 
         // Update the contract
         add_contract(&mut contract, accounts(1), true);
@@ -383,5 +399,37 @@ mod tests {
         assert!(matches!(contract_data.votes.iter().next().unwrap().vote_type, VoteType::Upvote));
         assert!(contract_data.github.is_some());
         assert_eq!(contract_data.github.unwrap().owner, "owner");
+    }
+
+    #[test]
+    fn test_add_comment() {
+        let context = get_context(accounts(0));
+        testing_env!(context.build());
+
+        let mut contract = SourceScan::new();
+        add_contract(&mut contract, accounts(1), false);
+
+        contract.add_comment(accounts(1), "Sample comment".to_string());
+
+        let comments = contract.get_comments(accounts(1));
+        assert_eq!(comments.len(), 1);
+        assert_eq!(comments[0].content, "Sample comment");
+    }
+
+    #[test]
+    fn test_get_comments() {
+        let context = get_context(accounts(0));
+        testing_env!(context.build());
+
+        let mut contract = SourceScan::new();
+        add_contract(&mut contract, accounts(1), false);
+
+        contract.add_comment(accounts(1), "First comment".to_string());
+        contract.add_comment(accounts(1), "Second comment".to_string());
+
+        let comments = contract.get_comments(accounts(1));
+        assert_eq!(comments.len(), 2);
+        assert_eq!(comments[0].content, "First comment");
+        assert_eq!(comments[1].content, "Second comment");
     }
 }
