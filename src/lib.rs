@@ -164,7 +164,7 @@ impl SourceScan {
         log!("Comment added for contract {}", account_id);
     }
 
-    pub fn get_comments(&self, account_id: AccountId) -> Vec<Comment> {
+    pub fn get_comments(&self, account_id: AccountId, from_index: usize, limit: usize) -> (Vec<Comment>, u64) {
         let contract: VerifiedContract = self
             .contracts
             .get(&account_id)
@@ -177,7 +177,14 @@ impl SourceScan {
             comments.push(self.comments.get(comment_id).unwrap());
         }
     
-        return comments;
+        let pages: u64 = self.get_pages(comments.len() as u64, limit as u64);
+        let filtered: Vec<Comment> = comments
+        .into_iter()
+        .skip(from_index)
+        .take(limit)
+        .collect();
+
+        return (filtered, pages);
     }
 
     pub fn vote_comment(&mut self, comment_id: u64, is_upvote: bool) {    
@@ -423,7 +430,8 @@ mod tests {
 
         contract.add_comment(accounts(1), "Sample comment".to_string());
 
-        let comments = contract.get_comments(accounts(1));
+        // Adjusted to include from_index and limit
+        let (comments, _) = contract.get_comments(accounts(1), 0, 10);
         assert_eq!(comments.len(), 1);
         assert_eq!(comments[0].content, "Sample comment");
     }
@@ -437,12 +445,14 @@ mod tests {
         add_contract(&mut contract, accounts(1), false);
 
         contract.add_comment(accounts(1), "First comment".to_string());
-        contract.add_comment( accounts(1), "Second comment".to_string());
+        contract.add_comment(accounts(1), "Second comment".to_string());
 
-        let comments = contract.get_comments(accounts(1));
+        // Adjusted to include from_index and limit
+        let (comments, pages) = contract.get_comments(accounts(1), 0, 10);
         assert_eq!(comments.len(), 2);
         assert_eq!(comments[0].content, "First comment");
         assert_eq!(comments[1].content, "Second comment");
+        assert_eq!(pages, 1);
     }
 
     #[test]
