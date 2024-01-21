@@ -177,6 +177,13 @@ impl SourceScan {
             comments.push(self.comments.get(comment_id).unwrap());
         }
     
+        // sort by upvotes
+        comments.sort_by(|a, b| {
+            let a = a.votes.iter().filter(|&v| matches!(v.vote_type, VoteType::Upvote)).count();
+            let b = b.votes.iter().filter(|&v| matches!(v.vote_type, VoteType::Upvote)).count();
+            b.cmp(&a)
+        });
+
         let pages: u64 = self.get_pages(comments.len() as u64, limit as u64);
         let filtered: Vec<Comment> = comments
         .into_iter()
