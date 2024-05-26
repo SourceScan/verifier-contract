@@ -1,12 +1,11 @@
 pub mod comment;
 pub mod vote;
 
-use near_sdk::{near, NearSchema};
+use near_sdk::near;
 use std::collections::HashSet;
 use vote::Vote;
 
 #[near(serializers=[borsh, json])]
-#[derive(NearSchema)]
 pub struct VerifiedContract {
     pub cid: String,
     pub lang: String,
