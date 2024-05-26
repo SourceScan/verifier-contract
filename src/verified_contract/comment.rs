@@ -1,13 +1,10 @@
 use super::Vote;
 use crate::str_serializers::*;
-use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{AccountId, NearSchema, Timestamp};
+use near_sdk::{near, AccountId, Timestamp};
 use std::collections::HashSet;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
-#[serde(crate = "near_sdk::serde")]
-#[borsh(crate = "near_sdk::borsh")]
+#[near(serializers=[borsh, json])]
+#[derive(Clone)]
 pub struct Comment {
     pub id: u64,
     pub author_id: AccountId,

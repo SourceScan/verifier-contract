@@ -1,5 +1,5 @@
 use crate::str_serializers::*;
-use near_sdk::{near, AccountId, NearSchema, Timestamp};
+use near_sdk::{near, AccountId, Timestamp};
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
