@@ -4,14 +4,14 @@ use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
 #[near(serializers=[borsh, json])]
-#[derive(PartialOrd, Eq, PartialEq, Clone, NearSchema)]
+#[derive(PartialOrd, Eq, PartialEq, Clone)]
 pub enum VoteType {
     Upvote,
     Downvote,
 }
 
 #[near(serializers=[borsh, json])]
-#[derive(Eq, Ord, Clone, NearSchema)]
+#[derive(Eq, Ord, Clone)]
 pub struct Vote {
     pub author_id: AccountId,
     #[serde(
