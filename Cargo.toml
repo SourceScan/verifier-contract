@@ -15,7 +15,7 @@ crate-type = ["cdylib", "rlib"]
 image = "sourcescan/cargo-near:0.6.0-rust-1.78.0"
 image_digest = "sha256:67886aed542554b60dde311e2b004a4a9798225a0db7a298549fc6b6c5484d23"
 container_build_command = "cargo near build"
-source_code_git_url="https://github.com/SourceScan/verifier-contract?rev=50e7328c905368fb8e5ea949afd3c84306a4161b"
+source_code_git_url="https://github.com/SourceScan/verifier-contract.git"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
