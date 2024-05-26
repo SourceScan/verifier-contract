@@ -11,17 +11,21 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[patch.crates-io]
-parity-secp256k1 = { git = "https://github.com/SourceScan/rust-secp256k1", branch = "master" }
+[package.metadata.near.reproducible_build]
+image = "sourcescan/cargo-near:0.6.0-rust-1.78.0"
+image_digest = "sha256:67886aed542554b60dde311e2b004a4a9798225a0db7a298549fc6b6c5484d23"
+container_build_command = "cargo near build"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-near-sdk = "4.1.1"
+near-sdk = { version = "5.1.0", features = ["unstable"] }
+near-contract-standards = "5.1.0"
 serde_json = { version = "1.0", features = ["preserve_order"] }
 
 [dev-dependencies]
-near-workspaces = { version = "0.9.0", default-features = false, features = ["install", "unstable"] }
-tokio = { version = "1.12.0", features = ["full"] }
+near-sdk = { version = "5.1.0", features = ["unit-testing"] }
+near-workspaces = { version = "0.10.0", features = ["unstable"], default-features = false  }
+tokio = { version = "1.10.0", features = ["full"] }
 serde_json = { version = "1.0", features = ["preserve_order"] }
 
 [profile.release]
