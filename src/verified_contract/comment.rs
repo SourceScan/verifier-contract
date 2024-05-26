@@ -11,7 +11,10 @@ use std::collections::HashSet;
 pub struct Comment {
     pub id: u64,
     pub author_id: AccountId,
-    #[serde(with = "u64_dec_format")]
+    #[serde(
+        serialize_with = "u64_dec_format::serialize",
+        deserialize_with = "u64_dec_format::deserialize"
+    )]
     pub timestamp: Timestamp,
     pub content: String,
     pub votes: HashSet<Vote>,
