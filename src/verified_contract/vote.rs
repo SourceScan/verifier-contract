@@ -1,26 +1,23 @@
 use crate::str_serializers::*;
-use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{AccountId, NearSchema, Timestamp};
+use near_sdk::{near, AccountId, NearSchema, Timestamp};
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
-#[derive(
-    BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialOrd, Eq, PartialEq, Clone,
-)]
-#[serde(crate = "near_sdk::serde")]
-#[borsh(crate = "near_sdk::borsh")]
+#[near(serializers=[borsh, json])]
+#[derive(PartialOrd, Eq, PartialEq, Clone, NearSchema)]
 pub enum VoteType {
     Upvote,
     Downvote,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Eq, Ord, Clone, NearSchema)]
-#[serde(crate = "near_sdk::serde")]
-#[borsh(crate = "near_sdk::borsh")]
+#[near(serializers=[borsh, json])]
+#[derive(Eq, Ord, Clone, NearSchema)]
 pub struct Vote {
     pub author_id: AccountId,
-    #[serde(with = "u64_dec_format")]
+    #[serde(
+        serialize_with = "u64_dec_format::serialize",
+        deserialize_with = "u64_dec_format::deserialize"
+    )]
     pub timestamp: Timestamp,
     pub vote_type: VoteType,
 }
