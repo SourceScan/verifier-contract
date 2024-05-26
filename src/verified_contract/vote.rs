@@ -1,7 +1,7 @@
 use crate::str_serializers::*;
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{AccountId, Timestamp};
+use near_sdk::{AccountId, NearSchema, Timestamp};
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
@@ -15,7 +15,7 @@ pub enum VoteType {
     Downvote,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Eq, Ord, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Eq, Ord, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
 pub struct Vote {
