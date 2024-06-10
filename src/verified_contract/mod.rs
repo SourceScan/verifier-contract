@@ -10,6 +10,7 @@ pub struct VerifiedContract {
     pub cid: String,
     pub lang: String,
     pub code_hash: String,
+    pub block_height: u64,
     pub votes: HashSet<Vote>,
     pub comments: Vec<u64>,
 }

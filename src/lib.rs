@@ -63,6 +63,7 @@ impl SourceScan {
         account_id: AccountId,
         cid: String,
         code_hash: String,
+        block_height: u64,
         lang: String,
     ) {
         require!(
@@ -77,6 +78,7 @@ impl SourceScan {
             &VerifiedContract {
                 cid,
                 code_hash,
+                block_height,
                 lang,
                 votes: existing_contract
                     .as_ref()
@@ -289,6 +291,7 @@ mod tests {
             account_id,
             "cid".to_string(),
             "code_hash".to_string(),
+            0,
             "lang".to_string(),
         );
     }
