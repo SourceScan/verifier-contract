@@ -19,8 +19,8 @@ source_code_git_url="https://github.com/SourceScan/verifier-contract.git"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-near-sdk = { version = "5.1.0", features = ["unstable"] }
-near-contract-standards = "5.1.0"
+near-sdk = "5.2.1"
+near-contract-standards = "5.2.1"
 serde_json = { version = "1.0", features = ["preserve_order"] }
 
 [dev-dependencies]
