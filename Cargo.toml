@@ -1,6 +1,6 @@
 [package]
 name = "verifier-contract"
-description = "cargo-near-new-project-description"
+description = "SourceScan verifier contract"
 version = "0.1.0"
 edition = "2021"
 # TODO: Fill out the repository field to help NEAR ecosystem tools to discover your project.
@@ -13,9 +13,9 @@ crate-type = ["cdylib", "rlib"]
 
 [package.metadata.near.reproducible_build]
 # docker image, descriptor of build environment
-image = "sourcescan/cargo-near:git-e3c8adb4b5542cbfc159bb1534f2b94c900c1648-1.80.0"
+image = "sourcescan/cargo-near:0.7.0-rust-1.80.0"
 # tag after colon above serves only descriptive purpose; image is identified by digest
-image_digest = "sha256:4bbcdf985936e1cb9b71c627a00cb9b53546ac0c9ef6b175da2918c1dea21363"
+image_digest = "sha256:60b6c83c305f689117675502ef6d2a82cabb32e2428ab80925bcdb526260dd9c"
 # build command inside of docker container 
 # if docker image from default gallery is used https://hub.docker.com/r/sourcescan/cargo-near/tags,
 # the command may be any combination of flags of `cargo-near`,
