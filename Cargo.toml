@@ -1,24 +1,38 @@
 [package]
 name = "verifier-contract"
-description = "cargo-near-new-project-description"
+description = "SourceScan verifier contract"
 version = "0.1.0"
 edition = "2021"
 # TODO: Fill out the repository field to help NEAR ecosystem tools to discover your project.
 # NEP-0330 is automatically implemented for all contracts built with near-sdk-rs.
 # Link to the repository will be available via `contract_source_metadata` view-function.
-#repository = "https://github.com/xxx/xxx"
+repository = "https://github.com/SourceScan/verifier-contract.git"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[package.metadata.near.reproducible_build]
+# docker image, descriptor of build environment
+image = "sourcescan/cargo-near:0.17.0-rust-1.86.0"
+# tag after colon above serves only descriptive purpose; image is identified by digest
+image_digest = "sha256:1784ca6310f3496f0048356ce420921c8f5fdf71ee8124d43a2e1ceb1f70db8a"
+# build command inside of docker container
+# if docker image from default gallery is used https://hub.docker.com/r/sourcescan/cargo-near/tags,
+# the command may be any combination of flags of `cargo-near`,
+# supported by respective version of binary inside the container besides `--no-locked` flag
+container_build_command = ["cargo", "near", "build", "non-reproducible-wasm", "--locked"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-near-sdk = "5.0.0-alpha.1"
+near-sdk = "5.2.1"
+near-contract-standards = "5.2.1"
+serde_json = { version = "1.0", features = ["preserve_order"] }
 
 [dev-dependencies]
-near-workspaces = { version = "0.9.0", default-features = false, features = ["install", "unstable"] }
-tokio = { version = "1.12.0", features = ["full"] }
-serde_json = "1"
+near-sdk = { version = "5.1.0", features = ["unit-testing"] }
+near-workspaces = { version = "0.10.0", features = ["unstable"], default-features = false  }
+tokio = { version = "1.10.0", features = ["full"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
 
 [profile.release]
 codegen-units = 1

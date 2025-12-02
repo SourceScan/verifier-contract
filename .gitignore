@@ -1,1 +1,5 @@
 /target
+/backups
+
+builder.sh
+build.sh

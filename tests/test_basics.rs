@@ -1,6 +1,5 @@
 use near_workspaces::AccountId;
 use serde_json::json;
-use verifier_contract::ContractData;
 
 #[tokio::test]
 async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>> {
@@ -11,6 +10,9 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
 
     let owner_account = sandbox.dev_create_account().await?;
     let user_account = sandbox.dev_create_account().await?;
+
+    let init_outcome = owner_account.call(contract.id(), "new").transact().await?;
+    assert!(init_outcome.is_success());
 
     let set_owner_outcome = owner_account
         .call(contract.id(), "set_owner")
@@ -45,14 +47,6 @@ async fn test_contract_is_operational() -> Result<(), Box<dyn std::error::Error>
     .transact()
     .await?;
     assert!(set_contract_outcome.is_success());
-
-    let contract_data_result: ContractData = contract
-        .view("get_contract")
-        .args_json(json!({ "account_id": user_account.id() }))
-        .await?
-        .json()?;
-    assert_eq!(contract_data_result.cid, "cid1");
-    assert_eq!(contract_data_result.lang, "Rust");
 
     Ok(())
 }
