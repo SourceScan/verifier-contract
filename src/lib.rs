@@ -112,6 +112,24 @@ impl SourceScan {
         return self.contracts.get(&account_id);
     }
 
+    /// Returns all verified contracts that have the given code_hash.
+    /// Useful when the same contract code is deployed to multiple accounts -
+    /// if the code is verified on one account, this shows it's verified everywhere.
+    pub fn get_contracts_by_code_hash(
+        &self,
+        code_hash: String,
+    ) -> Vec<(AccountId, VerifiedContract)> {
+        self.contracts
+            .iter()
+            .filter(|(_, contract)| contract.code_hash == code_hash)
+            .collect()
+    }
+
+    /// Returns the total count of verified contracts.
+    pub fn get_contracts_count(&self) -> u64 {
+        self.contracts.len()
+    }
+
     pub fn search(
         &self,
         key: String,
@@ -511,5 +529,66 @@ mod tests {
             comment.votes.iter().next().unwrap().vote_type,
             VoteType::Downvote
         ));
+    }
+
+    #[test]
+    fn test_get_contracts_by_code_hash() {
+        let context = get_context(accounts(0));
+        testing_env!(context.build());
+
+        let mut contract = SourceScan::new();
+
+        // Add contracts with the same code_hash
+        contract.set_contract(
+            accounts(1),
+            "cid1".to_string(),
+            "same_hash".to_string(),
+            100,
+            "Rust".to_string(),
+        );
+        contract.set_contract(
+            accounts(2),
+            "cid2".to_string(),
+            "same_hash".to_string(),
+            200,
+            "Rust".to_string(),
+        );
+        // Add contract with different code_hash
+        contract.set_contract(
+            accounts(3),
+            "cid3".to_string(),
+            "different_hash".to_string(),
+            300,
+            "Rust".to_string(),
+        );
+
+        // Query by code_hash
+        let results = contract.get_contracts_by_code_hash("same_hash".to_string());
+        assert_eq!(results.len(), 2);
+
+        let results_different = contract.get_contracts_by_code_hash("different_hash".to_string());
+        assert_eq!(results_different.len(), 1);
+
+        let results_none = contract.get_contracts_by_code_hash("nonexistent".to_string());
+        assert_eq!(results_none.len(), 0);
+    }
+
+    #[test]
+    fn test_get_contracts_count() {
+        let context = get_context(accounts(0));
+        testing_env!(context.build());
+
+        let mut contract = SourceScan::new();
+
+        assert_eq!(contract.get_contracts_count(), 0);
+
+        add_contract(&mut contract, accounts(1));
+        assert_eq!(contract.get_contracts_count(), 1);
+
+        add_contract(&mut contract, accounts(2));
+        assert_eq!(contract.get_contracts_count(), 2);
+
+        contract.purge_contract(accounts(1));
+        assert_eq!(contract.get_contracts_count(), 1);
     }
 }
